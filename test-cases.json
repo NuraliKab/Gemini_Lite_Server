@@ -1,0 +1,121 @@
+[
+    {
+        "type": "client",
+        "name": "Select default port 1958 if not specified",
+        "url": "gemini-lite://localhost/default_port_testing",
+        "transactions": [
+            {
+                "url": "gemini-lite://localhost/default_port_testing",
+                "reply": "20 text/gemini\r\nClient connected to server on default port 1958"
+            }
+        ],
+        "exitcode": 0,
+        "stdout": "Client connected to server on default port 1958",
+        "justification": "Project manual directly say that protocol uses port 1958 'We run the protocol over TCP port 1958, instead of Gemini’s port 1965'. If client do not specify the port then the default port 1958 should be used"
+    },
+    {
+        "type": "client",
+        "name": "Get file with many lines",
+        "url": "gemini-lite://localhost/diologue.txt",
+        "transactions": [
+            {
+                "url": "gemini-lite://localhost/diologue.txt",
+                "reply": "20 text/plain\r\n-Hello world \n -Hello human \n -This was just a test \n -ok bye"
+            }
+        ],
+        "exitcode": 0,
+        "stdout": "-Hello world \n -Hello human \n -This was just a test \n -ok bye",
+        "justification": "The requirement 2 in the project manual states that you need to 'dump the raw bytes'. So you need to make sure that text do not stop reading the file when \n is introduced and read the whole file."
+    },
+    {
+        "type": "client",
+        "name": "The servers permanent issue",
+        "url": "gemini-lite://localhost/bad_file",
+        "transactions": [
+            {
+                "url": "gemini-lite://localhost/bad_file",
+                "reply": "50 Server error\r\n"
+            }
+        ],
+        "exitcode": 50,
+        "stdout": "",
+        "justification": "The requirement 2 says to treat all errors that starts with 5 as permanent errors and report to System.err."
+    },
+    {
+        "type": "client",
+        "name": "Server suddenly disconnect",
+        "url": "gemini-lite://localhost/crash",
+        "transactions": [
+            {
+                "url": "gemini-lite://localhost/crash",
+                "reply": ""
+            }
+        ],
+        "exitcode": 1,
+        "stdout": "",
+        "justification": "Project manual in the requirement 2 was described that if the local error occurs then System.err should be printed. The causes for this can be connectivity issues like server suddenly disconnecting."
+    },
+    {
+        "type": "server",
+        "name": "Understand MIME types",
+        "documents": {
+            "file.gmi": "We came in peace"
+        },
+        "request": "gemini-lite://localhost/file.gmi\r\n",
+        "reply_regex": "^20 text/gemini$",
+        "body": "We came in peace",
+        "justification": "In project manual requirement 3 it says to use text/gemini for the .gmi files. The server should correctly identify MIME type for files"
+    },
+    {
+        "type": "server",
+        "name": "Leave the root directory",
+        "documents": {},
+        "request": "gemini-lite://localhost/../../../../../../../../../../../../etc/passwd\r\n",
+        "reply_regex": "^5.*",
+        "body": "",
+        "justification": "It is prohibited to go outside of root directory for safety reasons. The project manual requirement 3 says that client cannot go outside of root directory"
+    },
+    {
+        "type": "server",
+        "name": "No file found",
+        "documents": {},
+        "request": "gemini-lite://localhost/ghost_file.txt\r\n",
+        "reply_regex": "^51( .*)$",
+        "body": "",
+        "justification": "This is exception during request processing when file is not found. According to project manual requirement 3 the error code should start with 5"
+    },
+    {
+        "type": "server",
+        "name": "Handle MIME type for unknown file formats",
+        "documents": {
+            "unknown_file.pip": "6671"
+        },
+        "request": "gemini-lite://localhost/unknown_file.pip\r\n",
+        "reply_regex": "^20 .+$",
+        "body": "6671",
+        "justification": "The projet manual requirement 3 asks to use (but does not mandate) application/octet-stream for unknown file formats"
+    },
+    {
+        "type": "proxy",
+        "name": "Proxy handle successful request",
+        "request": "gemini-lite://localhost/file.txt\r\n",
+        "server_transactions": [
+            {
+                "url": "gemini-lite://localhost/file.txt",
+                "reply": "20 text/plain\r\nContent of the file"
+            }
+        ],
+        "reply_regex": "^20 text/plain$",
+        "body": "Content of the file",
+        "justification": "Proxy should transfer the request to server and then provide the client with the response. In the project manual requirement 4 it is written that proxy should act as a client and then send reply to the original client"
+    },
+    {
+        "type": "proxy",
+        "name": "The missing server",
+        "request": "gemini-lite://invalid.hostname.leastfixedpoint.com\r\n",
+        "server_transactions": [],
+        "reply_regex": "^43.*",
+        "body": "",
+        "justification": "The project manual requirment 4 directly states that if the proxy cannot connect to server, it should return error 43"
+    }
+]
